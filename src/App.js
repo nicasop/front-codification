@@ -1,23 +1,25 @@
-import logo from './logo.svg';
-import './App.css';
+import { Route, Routes } from 'react-router-dom';
+import NavBar from "./components/NavBar";
+import UploadForm from './components/UploadForm';
+import DownloadForm from './components/DownloadForm';
 
-function App() {
+import './App.css'
+
+const App = () => {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="px-3">
+      <div className="row alto">
+        <div className="col-2">
+          <NavBar className="px-3 py-2"/>
+        </div>
+        <div className="col-10 forms">
+          <Routes>
+            <Route path='/' element={<UploadForm />} />
+            <Route path='/desencript' element={<DownloadForm />} />
+            <Route path='*' element={<UploadForm />} />
+          </Routes>
+        </div>
+      </div>
     </div>
   );
 }

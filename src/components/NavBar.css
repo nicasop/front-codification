@@ -1,0 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@1,700&display=swap');
+
+.text-color{
+    color: rgb(24, 24, 167);
+    font-family: 'Roboto Mono', monospace;
+}
+
+.item-group {
+    cursor: pointer;
+}
