@@ -2,28 +2,53 @@ import { useRef } from 'react'
 import './DownloadForm.css'
 
 const DownloadForm = () => {
+
+    const pwd = useRef();
     const file = useRef();
 
     const submit = () => {
         if (file.current.files[0]){
-            console.log(file.current.files[0]);
             const form = new FormData();
             form.append('file',file.current.files[0]);
-            console.log(form);
-
-            fetch('http://localhost:4000/downloadMessage', {
+            
+            // fetch('http://localhost:4000/downloadMessage?'+ new URLSearchParams({
+            fetch('https://api-codification.onrender.com/downloadMessage?'+ new URLSearchParams({
+                key: pwd.current.value
+            }), {
                 method: 'POST',
                 // headers: {
                 //     'Content-Type': 'application/json'
                 // },
                 body: form
-            }).then((response) => {
-                console.log(response)
-                let blob = new Blob([response], {type: 'application/octet-stream'});
-                let link = document.createElement('a');
-                link.href = window.URL.createObjectURL(blob);
-                link.download = "desencripted_message.txt";
-                link.click();
+            }).then( (response) => {
+                if (response.status !== 500){
+                    const reader = response.body.getReader();
+                    return new ReadableStream({
+                        start( controller ){
+                            return pump();
+                            function pump(){
+                                return reader.read().then( ({ done, value}) => {
+                                    if (done) {
+                                        controller.close();
+                                        return;
+                                    }
+                                    controller.enqueue(value);
+                                    return pump();
+                                });
+                            }
+                        }
+                    })
+                }
+            })
+            .then((stream) => new Response(stream))
+            .then( (response) => response.blob() )
+            .then( (blob) =>  {
+                if( blob.size !== 0){
+                    let link = document.createElement('a');
+                    link.href = window.URL.createObjectURL(blob);
+                    link.download = "desencripted_message.txt";
+                    link.click();
+                }
             })
             .catch((err) => console.log(err));
         }
@@ -41,8 +66,12 @@ const DownloadForm = () => {
             <div>
                 <div>
                     <div class="mb-3">
+                        <label for="pwd" class="form-label">Clave de encriptación</label>
+                        <input type="text" class="form-control" id="pwd" name='pwd' ref={ pwd } />
+                    </div>
+                    <div class="mb-3">
                         <label for="file" class="form-label">Archivo con el mensaje para desencriptar</label>
-                        <input class="form-control" type="file" id="file" accept='*.txt' ref={ file } />
+                        <input class="form-control" type="file" id="file" accept='.des' ref={ file } />
                     </div>
                 </div>
                 <input className='btn btn-custom' type="submit" value='Enviar' onClick={submit} />

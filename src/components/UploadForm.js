@@ -9,13 +9,11 @@ const UploadForm = () => {
 
     const submit = () => {
         if (pwd.current.value && file.current.files[0]){
-            console.log(pwd.current.value);
-            console.log(file.current.files[0]);
             const form = new FormData();
             form.append('file',file.current.files[0]);
-            console.log(form);
-
-            fetch('http://localhost:4000/uploadData?'+ new URLSearchParams({
+            
+            // fetch('http://localhost:4000/uploadData?'+ new URLSearchParams({
+            fetch('https://api-codification.onrender.com/uploadData?'+ new URLSearchParams({
                 key: pwd.current.value
             }), {
                 method: 'POST',
@@ -23,13 +21,35 @@ const UploadForm = () => {
                 //     'Content-Type': 'application/json'
                 // },
                 body: form
-            }).then((response) => {
-                console.log(response)
-                let blob = new Blob([response], {type: 'application/octet-stream'});
-                let link = document.createElement('a');
-                link.href = window.URL.createObjectURL(blob);
-                link.download = "encripted.des";
-                link.click();
+            }).then( (response) => {
+                if (response.status !== 500){
+                    const reader = response.body.getReader();
+                    return new ReadableStream({
+                        start( controller ){
+                            return pump();
+                            function pump(){
+                                return reader.read().then( ({ done, value}) => {
+                                    if (done) {
+                                        controller.close();
+                                        return;
+                                    }
+                                    controller.enqueue(value);
+                                    return pump();
+                                });
+                            }
+                        }
+                    })
+                }
+            })
+            .then((stream) => new Response(stream))
+            .then( (response) => response.blob() )
+            .then( (blob) =>  {
+                if( blob.size !== 0){
+                    let link = document.createElement('a');
+                    link.href = window.URL.createObjectURL(blob);
+                    link.download = "encripted.des";
+                    link.click();
+                }
             })
             .catch((err) => console.log(err));
         }
@@ -52,7 +72,7 @@ const UploadForm = () => {
                     </div>
                     <div class="mb-3">
                         <label for="file" class="form-label">Archivo con el mensaje para encriptar</label>
-                        <input class="form-control" type="file" id="file" accept='*.txt' ref={ file } />
+                        <input class="form-control" type="file" id="file" accept='.txt' ref={ file } />
                     </div>
                 </div>
                 <input className='btn btn-custom' type="submit" value='Enviar' onClick={submit} />
