@@ -7,11 +7,11 @@ const DownloadForm = () => {
     const file = useRef();
 
     const submit = () => {
-        if (file.current.files[0]){
+        if (pwd.current.value && file.current.files[0]){
             const form = new FormData();
             form.append('file',file.current.files[0]);
             
-            // fetch('http://localhost:4000/downloadMessage?'+ new URLSearchParams({
+            // fetch('http://localhost:3000/downloadMessage?'+ new URLSearchParams({
             fetch('https://api-codification.onrender.com/downloadMessage?'+ new URLSearchParams({
                 key: pwd.current.value
             }), {
@@ -20,40 +20,57 @@ const DownloadForm = () => {
                 //     'Content-Type': 'application/json'
                 // },
                 body: form
-            }).then( (response) => {
-                if (response.status !== 500){
-                    const reader = response.body.getReader();
-                    return new ReadableStream({
-                        start( controller ){
-                            return pump();
-                            function pump(){
-                                return reader.read().then( ({ done, value}) => {
-                                    if (done) {
-                                        controller.close();
-                                        return;
-                                    }
-                                    controller.enqueue(value);
-                                    return pump();
-                                });
-                            }
-                        }
-                    })
+            })
+            // .then( (response) => {
+            //     if (response.status !== 500){
+            //         const reader = response.body.getReader();
+            //         return new ReadableStream({
+            //             start( controller ){
+            //                 return pump();
+            //                 function pump(){
+            //                     return reader.read().then( ({ done, value}) => {
+            //                         if (done) {
+            //                             controller.close();
+            //                             return;
+            //                         }
+            //                         controller.enqueue(value);
+            //                         return pump();
+            //                     });
+            //                 }
+            //             }
+            //         })
+            //     }
+            // })
+            // .then((stream) => new Response(stream))
+            .then( (response) => {
+                if (response.ok){
+                    return response.blob()
+                }
+                else{
+                    if (response.status === 500){
+                        throw new Error('Ha ocurrido un error durante la decodificación');
+                    }
+                    else if (response.status === 501){
+                        throw new Error('El tamaño de la clave es superior al mensaje enviado');
+                    }     
                 }
             })
-            .then((stream) => new Response(stream))
-            .then( (response) => response.blob() )
             .then( (blob) =>  {
                 if( blob.size !== 0){
                     let link = document.createElement('a');
                     link.href = window.URL.createObjectURL(blob);
                     link.download = "desencripted_message.txt";
                     link.click();
+                    pwd.current.value = '';
+                    file.current.value = '';
+                }
+                else{
+                    throw new Error('El archivo no contiene información');
                 }
             })
-            .catch((err) => console.log(err));
+            .catch((err) => alert(err.message) );
         }
         else{
-            console.log('campos vacios');
             alert('Existen campos vacios verifique la información')
         }
 

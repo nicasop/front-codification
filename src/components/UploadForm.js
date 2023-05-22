@@ -12,7 +12,7 @@ const UploadForm = () => {
             const form = new FormData();
             form.append('file',file.current.files[0]);
             
-            // fetch('http://localhost:4000/uploadData?'+ new URLSearchParams({
+            // fetch('http://localhost:3000/uploadData?'+ new URLSearchParams({
             fetch('https://api-codification.onrender.com/uploadData?'+ new URLSearchParams({
                 key: pwd.current.value
             }), {
@@ -21,40 +21,57 @@ const UploadForm = () => {
                 //     'Content-Type': 'application/json'
                 // },
                 body: form
-            }).then( (response) => {
-                if (response.status !== 500){
-                    const reader = response.body.getReader();
-                    return new ReadableStream({
-                        start( controller ){
-                            return pump();
-                            function pump(){
-                                return reader.read().then( ({ done, value}) => {
-                                    if (done) {
-                                        controller.close();
-                                        return;
-                                    }
-                                    controller.enqueue(value);
-                                    return pump();
-                                });
-                            }
-                        }
-                    })
+            })
+            // .then( (response) => {
+            //     if (response.status !== 500){
+            //         const reader = response.body.getReader();
+            //         return new ReadableStream({
+            //             start( controller ){
+            //                 return pump();
+            //                 function pump(){
+            //                     return reader.read().then( ({ done, value}) => {
+            //                         if (done) {
+            //                             controller.close();
+            //                             return;
+            //                         }
+            //                         controller.enqueue(value);
+            //                         return pump();
+            //                     });
+            //                 }
+            //             }
+            //         })
+            //     }
+            // })
+            // .then((stream) => new Response(stream))
+            .then( (response) => {
+                if (response.ok){
+                    return response.blob()
+                }
+                else{
+                    if (response.status === 500){
+                        throw new Error('Ha ocurrido un error durante la codificación');
+                    }
+                    else if (response.status === 501){
+                        throw new Error('El tamaño de la clave es superior al mensaje enviado');
+                    }     
                 }
             })
-            .then((stream) => new Response(stream))
-            .then( (response) => response.blob() )
             .then( (blob) =>  {
                 if( blob.size !== 0){
                     let link = document.createElement('a');
                     link.href = window.URL.createObjectURL(blob);
                     link.download = "encripted.des";
                     link.click();
+                    pwd.current.value = '';
+                    file.current.value = '';
+                }
+                else{
+                    throw new Error('El archivo no contiene información');
                 }
             })
-            .catch((err) => console.log(err));
+            .catch((err) => alert(err.message) );
         }
         else{
-            console.log('campos vacios');
             alert('Existen campos vacios verifique la información')
         }
 
