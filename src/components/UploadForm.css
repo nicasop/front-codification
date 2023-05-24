@@ -8,6 +8,12 @@
 .btn-custom{
     background-color: black;
     color: white;
+    transition: all 0.2s ease;
+}
+
+.btn-custom:hover{
+    background-color: #333;
+    color: white;
 }
 
 @media (min-width: 980px) {
